@@ -1,0 +1,115 @@
+---
+title: "Lab 3"
+author: "Jen McGregor"
+date: "10/8/2021"
+output:
+  prettydoc::html_pretty:
+  theme: hpstr
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(english)
+library(glue)
+library(purrr)
+```
+
+**The song [“12 Days of Christmas”](https://en.wikipedia.org/wiki/The_Twelve_Days_of_Christmas_(song)), written around 1780, tells the tale of many gifts a person receives in the days leading up to Christmas.**
+
+**These gifts repeat and compound; on the first day, the narrator recieves: A partridge in a pear tree. On the last day, he or she receives: Twelve Drummers Drumming, Eleven Pipers Piping, Ten Lords a Leaping, Nine Ladies Waiting, Eight Maids a Milking, Seven Swans a Swimming, Six Geese a Laying, Five Golden Rings, Four Calling Birds, Three French Hens, Two Turtle Doves, And a Partridge in a Pear Tree.**
+
+**Your task will be to write functions and loop over them to sing the whole song.**
+
+## A Test Dataset
+
+**Run the code below to load a dataset called xmas that contains the crucial information about the gifts in the song. We will use this dataset to test out our functions as we work on them.**
+
+```{r}
+xmas <- read.csv("https://www.dropbox.com/s/12ipnczn0fygglt/xmas.csv?dl=1")
+```
+
+# Step One: Make gift phrases
+
+**Write a function called make_phrase that takes as input the necessary information, and returns a phrase.**
+
+```{r}
+make_phrase <- function(num,gift)
+  {numword <- english(num)
+  glue("{numword} {gift}")
+  }
+
+make_phrase(10, "lords a-leaping")
+
+```
+**Try your function out on the xmas data, by making a new variable containing the daily phrases.**
+
+```{r}
+xmas %>%
+ mutate(GiftPhrase=pmap_chr(xmas,~make_phrase(..1,..3)))
+
+```
+
+# Step Two: Verses
+
+**Write a function called sing_verse that takes as input:**
+  
+  **1. A number indicating which day to sing about**
+  
+  **2. A vector that contains the day labels, like “first”, “second” etc.**
+  
+  **3. A vector that contains the gift for each day.**
+
+```{r}
+sing_verse <- function(num,daywords,gifts){
+  subverse <- map_chr(num:1,~make_phrase(.x,gifts[.x]))
+  head <- paste(
+    "On the", daywords[num],
+    "day of Christmas my true love sent to me,"
+  )
+  verse <- append(head,subverse,1)
+  verse <- verse %>% paste(collapse = "\n")
+  return(verse)
+}
+
+sing_verse(2, xmas$Day.in.Words, xmas$Gift.Item)
+sing_verse(7, xmas$Day.in.Words, xmas$Gift.Item)
+sing_verse(11, xmas$Day.in.Words, xmas$Gift.Item)
+```
+
+# Step Three: Sing the whole song.
+
+
+**Write a function called sing_xmas_song() that takes as input:**
+
+  **1. A vector of day numbers (1, 2, 3, ...)**
+
+  **2. A vector of day names (first, second, …)**
+
+  **3. A vector of gifts**
+
+**And returns the whole text of the song, for all 12 verses. This step will require you to use iteration in some way.**
+
+```{r}
+sing_xmas_song <- function(num,daynames,gifts){
+  song <- map_chr(num,~sing_verse(.x,daynames,gifts)) %>%
+    paste(collapse = "\n")
+  return(song)
+}
+
+sing_xmas_song(xmas$Day,xmas$Day.in.Words,xmas$Gift.Item)%>%
+  cat()
+```
+
+
+# Step Four: Try your functions
+**Use the following code to load a dataset that is different from the original xmas song. Note that the column names of this dataset are not the same as they were for the original xmas data!**
+
+**Use the function sing_xmas_song() with this dataset to sing a new version of “12 Days of Christmas”.**
+
+```{r}
+xmas2 <- read.csv("https://www.dropbox.com/s/tmilnd6ad8k26wy/xmas2.csv?dl=1")
+sing_xmas_song(xmas2$Day,xmas2$Day.in.Words,xmas2$Gift.Item)%>%
+  cat()
+```

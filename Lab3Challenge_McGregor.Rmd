@@ -1,0 +1,57 @@
+---
+title: "Lab 3 Challenge"
+author: "Jen McGregor"
+date: "10/10/2021"
+output:
+  prettydoc::html_pretty:
+  theme: hpstr
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+xmas <- read.csv("https://www.dropbox.com/s/12ipnczn0fygglt/xmas.csv?dl=1")
+xmas2 <- read.csv("https://www.dropbox.com/s/tmilnd6ad8k26wy/xmas2.csv?dl=1")
+library(tidyverse)
+library(english)
+library(glue)
+library(purrr)
+make_phrase <- function(num,gift)
+  {numword <- english(num)
+  glue("{numword} {gift}")
+  }
+
+make_phrase(10, "lords a-leaping")
+
+xmas %>%
+ mutate(GiftPhrase=pmap_chr(xmas,~make_phrase(..1,..3)))
+
+sing_verse <- function(num,daywords,gifts){
+  subverse <- map_chr(num:1,~make_phrase(.x,gifts[.x]))
+  head <- paste(
+    "On the", daywords[num],
+    "day of Christmas my true love sent to me,"
+  )
+  verse <- append(head,subverse,1)
+  verse <- verse %>% paste(collapse = "\n")
+  return(verse)
+}
+
+sing_verse(2, xmas$Day.in.Words, xmas$Gift.Item)
+sing_verse(7, xmas$Day.in.Words, xmas$Gift.Item)
+sing_verse(11, xmas$Day.in.Words, xmas$Gift.Item)
+
+sing_xmas_song <- function(num,daynames,gifts){
+  song <- map_chr(num,~sing_verse(.x,daynames,gifts)) %>%
+    paste(collapse = "\n")
+  return(song)
+}
+```
+
+#Challenge
+
+**Re-write your functions to be pipe-friendly.**
+```{r}
+xmas%>%
+  sing_xmas_song(Day,Day.in.Words,Gift.Item)
+```
